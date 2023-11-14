@@ -6,23 +6,32 @@
 #include<string.h>
 #include<sys/stat.h>
 #include<time.h>
+
 void cerinte(char *path,char* name, struct stat *st_file)
 {
   char str[3000];
   char buff[100];//buffer pt transformarea val din intregi in sir de caractere
-  
+  struct stat st_link;
+  if(lstat(path,&st_link) == -1)
+    {
+      perror("stat error");
+      exit(1);
+    }
   //adaugare nume
-  if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode) && strstr(path,".bmp")))
-    strcpy(str,"nume fisier: ");
-  if(S_ISLNK(st_file->st_mode))
+  if(S_ISLNK(st_link.st_mode))
     strcpy(str,"nume legatura: ");
-  if(S_ISDIR(st_file->st_mode))
-      strcpy(str,"nume director: ");
+  else
+    {
+      if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode) && strstr(path,".bmp")))
+	strcpy(str,"nume fisier: ");
   
+      if(S_ISDIR(st_file->st_mode))
+	strcpy(str,"nume director: ");
+    }
   strcat(str,name);
   strcat(str,"\n");
 
-  //adaugare dimensiuni pentru fisierele bmp
+  //adaugare lungime si inaltime pentru fisierele bmp
   if(S_ISREG(st_file->st_mode)&& strstr(path,".bmp"))
     {
       int fd;
@@ -66,21 +75,15 @@ void cerinte(char *path,char* name, struct stat *st_file)
 	}
     }
   
-  //dimensiunea pentru de legatura simbolica
-  if(S_ISLNK(st_file->st_mode))
+  //dimensiunea pentru legatura simbolica
+  if(S_ISLNK(st_link.st_mode))
     {
-      struct stat st_link;
-      if(lstat(path,&st_link) == -1)
-	{
-	  perror("stat error");
-	  exit(1);
-	}
       sprintf(buff,"dimensiune legatura: %ld\n",st_link.st_size);
       strcat(str,buff);
     }
   
   //dimensiune fisier pt fisier regulat,bmp sau legatura simbolica 
-  if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")) || S_ISLNK(st_file->st_mode))
+  if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp"))|| S_ISLNK(st_file->st_mode) )
     {
       strcat(str,"dimensiune: ");
       sprintf(buff,"%ld\n",st_file->st_size);
@@ -88,27 +91,30 @@ void cerinte(char *path,char* name, struct stat *st_file)
     }
   
   //ID utilizator pt fisier regulat,bmp sau director
-  if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")) || S_ISDIR(st_file->st_mode))
-    {
-      strcat(str,"identificatorul utilizatorului: ");
-      sprintf(buff,"%d\n",st_file->st_uid);
-      strcat(str,buff);
-    }
+  if(!(S_ISLNK(st_link.st_mode)))
+    if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")) || S_ISDIR(st_file->st_mode))
+      {
+	strcat(str,"identificatorul utilizatorului: ");
+	sprintf(buff,"%d\n",st_file->st_uid);
+	strcat(str,buff);
+      }
   
   //timpul ultimei modificari pt fisier bmp sau regulat
-  if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")))
-    {
-      strcat(str,"timpul ultimei modificari: ");
-      strcat(str,ctime(&st_file->st_mtime));
-    }
+  if(!(S_ISLNK(st_link.st_mode)))
+    if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")))
+      {
+	strcat(str,"timpul ultimei modificari: ");
+	strcat(str,ctime(&st_file->st_mtime));
+      }
   
   //contorul de legaturi pt fisier bmp sau regulat
-  if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")))
-  {
-    strcat(str,"contorul de legaturi: ");
-    sprintf(buff,"%ld\n",st_file->st_nlink);
-    strcat(str,buff);
-  }
+  if(!(S_ISLNK(st_link.st_mode)))//ca sa nu intre si pt legatura simbolica
+    if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")))
+      {
+	strcat(str,"contorul de legaturi: ");
+	sprintf(buff,"%ld\n",st_file->st_nlink);
+	strcat(str,buff);
+      }
   
   //drepturi de acces user
   //drepturi de acces grup
