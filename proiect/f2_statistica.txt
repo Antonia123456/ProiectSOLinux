@@ -1,6 +1,9 @@
-nume director: f2
+nume fisier: f2
+dimensiune: 0
 identificatorul utilizatorului: 1000
-drepturi de acces user: RWX
-drepturi de acces grup: R-X
-drepturi de acces altii: R-X
+timpul ultimei modificari: Sun Nov 12 17:47:35 2023
+contorul de legaturi: 1
+drepturi de acces user: RW-
+drepturi de acces grup: R--
+drepturi de acces altii: R--
 

@@ -1,6 +1,11 @@
-nume director: imagine.bmp
+nume fisier: imagine.bmp
+inaltime: 1920
+lungime: 1280
+dimensiune: 7372938
 identificatorul utilizatorului: 1000
-drepturi de acces user: RWX
-drepturi de acces grup: R-X
-drepturi de acces altii: R-X
+timpul ultimei modificari: Sat Nov 11 15:10:15 2023
+contorul de legaturi: 1
+drepturi de acces user: RW-
+drepturi de acces grup: R--
+drepturi de acces altii: R--
 

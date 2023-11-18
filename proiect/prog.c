@@ -9,14 +9,20 @@
 #include<sys/wait.h>
 #include<sys/types.h>
 
-void cerinte(char *path,char* name, struct stat *st_file,int out_fd,int *lines_count)
+void cerinte(char *path,char* name,int out_fd,int *lines_count)
 {
   char str[3000];
   char buff[200];//buffer pt transformarea val din intregi in sir de caractere
+  struct stat st_file;
+  if(stat(path,&st_file) == -1)
+    {
+      perror("stat file error");
+      exit(1);
+    }
   struct stat st_link;
   if(lstat(path,&st_link) == -1)
     {
-      perror("stat error");
+      perror("stat link error");
       exit(1);
     }
   //adaugare nume
@@ -27,10 +33,10 @@ void cerinte(char *path,char* name, struct stat *st_file,int out_fd,int *lines_c
     }
   else
     {
-      if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode) && strstr(path,".bmp")))
+      if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode) && strstr(path,".bmp")))
 	strcpy(str,"nume fisier: ");
   
-      if(S_ISDIR(st_file->st_mode))
+      if(S_ISDIR(st_file.st_mode))
 	{
 	  strcpy(str,"nume director: ");
 	  *lines_count=5;
@@ -40,7 +46,7 @@ void cerinte(char *path,char* name, struct stat *st_file,int out_fd,int *lines_c
   strcat(str,"\n");
 
   //adaugare lungime si inaltime pentru fisierele bmp
-  if(S_ISREG(st_file->st_mode)&& strstr(path,".bmp"))
+  if(S_ISREG(st_file.st_mode)&& strstr(path,".bmp"))
     {
       int fd;
       fd=open(path,O_RDONLY);
@@ -90,55 +96,55 @@ void cerinte(char *path,char* name, struct stat *st_file,int out_fd,int *lines_c
     }
   
   //dimensiune fisier pt fisier regulat,bmp sau legatura simbolica 
-  if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp"))|| S_ISLNK(st_file->st_mode) )
+  if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode)&& strstr(path,".bmp"))|| S_ISLNK(st_file.st_mode) )
     {
       strcat(str,"dimensiune: ");
-      sprintf(buff,"%ld\n",st_file->st_size);
+      sprintf(buff,"%ld\n",st_file.st_size);
       strcat(str,buff);
     }
   
   //ID utilizator pt fisier regulat,bmp sau director
   if(!(S_ISLNK(st_link.st_mode)))
-    if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")) || S_ISDIR(st_file->st_mode))
+    if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode)&& strstr(path,".bmp")) || S_ISDIR(st_file.st_mode))
       {
 	strcat(str,"identificatorul utilizatorului: ");
-	sprintf(buff,"%d\n",st_file->st_uid);
+	sprintf(buff,"%d\n",st_file.st_uid);
 	strcat(str,buff);
       }
   
   //timpul ultimei modificari pt fisier bmp sau regulat
   if(!(S_ISLNK(st_link.st_mode)))
-    if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")))
+    if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode)&& strstr(path,".bmp")))
       {
 	strcat(str,"timpul ultimei modificari: ");
-	strcat(str,ctime(&st_file->st_mtime));
+	strcat(str,ctime(&st_file.st_mtime));
       }
   
   //contorul de legaturi pt fisier bmp sau regulat
   if(!(S_ISLNK(st_link.st_mode)))//ca sa nu intre si pt legatura simbolica
-    if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode)&& strstr(path,".bmp")))
+    if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode)&& strstr(path,".bmp")))
       {
 	strcat(str,"contorul de legaturi: ");
-	sprintf(buff,"%ld\n",st_file->st_nlink);
+	sprintf(buff,"%ld\n",st_file.st_nlink);
 	strcat(str,buff);
       }
   
   //line counterul pt fisiere regulate dar nu bmp
   if(!(S_ISLNK(st_link.st_mode)))
-    if(S_ISREG(st_file->st_mode) && !(S_ISREG(st_file->st_mode)&& strstr(path,".bmp")))
+    if(S_ISREG(st_file.st_mode) && !(S_ISREG(st_file.st_mode)&& strstr(path,".bmp")))
       *lines_count=7;
       
   //drepturi de acces user
   //drepturi de acces grup
   //drepturi de acces altii
   strcat(str,"drepturi de acces user: ");
-  sprintf(buff,"%s%s%s\n", st_file->st_mode & S_IRUSR ? "R" : "-",st_file->st_mode & S_IWUSR ? "W" : "-",st_file->st_mode & S_IXUSR ? "X" : "-");
+  sprintf(buff,"%s%s%s\n", st_file.st_mode & S_IRUSR ? "R" : "-",st_file.st_mode & S_IWUSR ? "W" : "-",st_file.st_mode & S_IXUSR ? "X" : "-");
   strcat(str,buff);
   strcat(str,"drepturi de acces grup: ");
-  sprintf(buff,"%s%s%s\n", st_file->st_mode & S_IRGRP ? "R" : "-",st_file->st_mode & S_IWGRP ? "W" : "-",st_file->st_mode & S_IXGRP ? "X" : "-");
+  sprintf(buff,"%s%s%s\n", st_file.st_mode & S_IRGRP ? "R" : "-",st_file.st_mode & S_IWGRP ? "W" : "-",st_file.st_mode & S_IXGRP ? "X" : "-");
   strcat(str,buff);
   strcat(str,"drepturi de acces altii: ");
-  sprintf(buff,"%s%s%s\n",st_file->st_mode & S_IROTH ? "R" : "-",st_file->st_mode & S_IWOTH ? "W" : "-",st_file->st_mode & S_IXOTH ? "X" : "-");
+  sprintf(buff,"%s%s%s\n",st_file.st_mode & S_IROTH ? "R" : "-",st_file.st_mode & S_IWOTH ? "W" : "-",st_file.st_mode & S_IXOTH ? "X" : "-");
   strcat(str,buff);
   strcat(str,"\n");
 
@@ -164,7 +170,7 @@ void writeStatistic(int st_fd,int childPid,int lines)
 }
 
 
-void citire_director(char *director,char *iesire)
+void citire_director(const char *director,const char *iesire)
 {
   DIR *dir;
   struct dirent *entry=NULL;
@@ -176,7 +182,6 @@ void citire_director(char *director,char *iesire)
       exit(1);
     }
 
-  
   struct stat file;
   if(stat(iesire,&file)==-1)
       if(!S_ISDIR(file.st_mode))
@@ -184,6 +189,7 @@ void citire_director(char *director,char *iesire)
 	  perror("error stat output director");
 	  exit(1);
 	}
+  
     
   char statistici[300];
   sprintf(statistici,"%s_statistica.txt",director);
@@ -220,11 +226,11 @@ void citire_director(char *director,char *iesire)
 	  
 	      if(S_ISDIR(file.st_mode))
 		{
-		  cerinte(path,entry->d_name,&file,out_fd, &count);
+		  cerinte(path,entry->d_name,out_fd, &count);
 		  citire_director(path,iesire);
 		}
 	      else
-		cerinte(path,entry->d_name,&file,out_fd, &count);
+		cerinte(path,entry->d_name,out_fd, &count);
 	    
 
 	      if(close(out_fd)==-1)

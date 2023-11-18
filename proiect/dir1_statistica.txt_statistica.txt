@@ -1,6 +1,9 @@
-nume director: dir1_statistica.txt
+nume fisier: dir1_statistica.txt
+dimensiune: 0
 identificatorul utilizatorului: 1000
-drepturi de acces user: RWX
-drepturi de acces grup: R-X
-drepturi de acces altii: R-X
+timpul ultimei modificari: Sat Nov 18 16:17:46 2023
+contorul de legaturi: 1
+drepturi de acces user: RW-
+drepturi de acces grup: R--
+drepturi de acces altii: R--
 
