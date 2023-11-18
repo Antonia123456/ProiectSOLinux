@@ -9,10 +9,16 @@
 #include<sys/wait.h>
 #include<sys/types.h>
 
-void cerinte(char *path,char* name, struct stat *st_file,int out_fd,int *lines_count)
+void cerinte(char *path,char* name,int out_fd,int *lines_count)
 {
   char str[3000];
   char buff[200];//buffer pt transformarea val din intregi in sir de caractere
+  struct stat st_file;
+  if(stat(path,&st_file)==-1)
+    {
+      perror("error stat");
+      exit(1);
+    }
   struct stat st_link;
   if(lstat(path,&st_link) == -1)
     {
@@ -27,7 +33,7 @@ void cerinte(char *path,char* name, struct stat *st_file,int out_fd,int *lines_c
     }
   else
     {
-      if(S_ISREG(st_file->st_mode) || (S_ISREG(st_file->st_mode) && strstr(path,".bmp")))
+      if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file->st_mode) && strstr(path,".bmp")))
 	strcpy(str,"nume fisier: ");
   
       if(S_ISDIR(st_file->st_mode))

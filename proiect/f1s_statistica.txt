@@ -1,0 +1,6 @@
+nume legatura: f1s
+dimensiune legatura: 6
+drepturi de acces user: RWX
+drepturi de acces grup: R-X
+drepturi de acces altii: R-X
+
