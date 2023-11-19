@@ -132,7 +132,7 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
   //line counterul pt fisiere regulate dar nu bmp
   if(!(S_ISLNK(st_link.st_mode)))
     if(S_ISREG(st_file.st_mode) && !(S_ISREG(st_file.st_mode)&& strstr(path,".bmp")))
-      *lines_count=7;
+      *lines_count=8;
       
   //drepturi de acces user
   //drepturi de acces grup
@@ -192,7 +192,7 @@ void citire_director(const char *director,const char *iesire)
   
     
   char statistici[300];
-  sprintf(statistici,"%s_statistica.txt",director);
+  sprintf(statistici,"%s/statistica.txt",director);
   
   int st_fd=open(statistici,O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   
@@ -214,7 +214,7 @@ void citire_director(const char *director,const char *iesire)
 	    {
 	      int count=0;
 	      char outpath[300];
-	      sprintf(outpath,"%s_statistica.txt",entry->d_name);
+	      sprintf(outpath,"%s/%s_statistica.txt",iesire,entry->d_name);
 
 	      int out_fd=open(outpath,O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	      if(out_fd==-1)
@@ -223,14 +223,8 @@ void citire_director(const char *director,const char *iesire)
 		  exit(1);
 		}
 	  
-	  
-	      if(S_ISDIR(file.st_mode))
-		{
-		  cerinte(path,entry->d_name,out_fd, &count);
-		  citire_director(path,iesire);
-		}
-	      else
-		cerinte(path,entry->d_name,out_fd, &count);
+	      //apelam cerintele pt fiecare fisier/dir/legatura simbolica
+	      cerinte(path,entry->d_name,out_fd, &count);
 	    
 
 	      if(close(out_fd)==-1)
@@ -245,9 +239,9 @@ void citire_director(const char *director,const char *iesire)
 	      int status=0;
 	      waitpid(childPid, &status,0);
 	      if(WIFEXITED(status))
-		printf("process with pid %d and cod %d ended\n",childPid,WEXITSTATUS(status));
+		printf("S-a incheiat procesul cu pid-ul %d si codul %d\n",childPid,WEXITSTATUS(status));
 	      else
-		printf("process with pid %d didnt't ended\n",childPid);
+		printf("process with pid %d didnt't ended correctly\n",childPid);
 	  
 	      writeStatistic(st_fd,childPid,WEXITSTATUS(status));
 	    }
