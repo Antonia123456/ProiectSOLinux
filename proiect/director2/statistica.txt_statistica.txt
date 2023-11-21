@@ -1,7 +1,7 @@
 nume fisier: statistica.txt
 dimensiune: 91
 identificatorul utilizatorului: 1000
-timpul ultimei modificari: Sun Nov 19 16:47:59 2023
+timpul ultimei modificari: Tue Nov 21 10:53:42 2023
 contorul de legaturi: 1
 drepturi de acces user: RW-
 drepturi de acces grup: R--

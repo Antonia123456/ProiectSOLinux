@@ -12,7 +12,8 @@
 void cerinte(char *path,char* name,int out_fd,int *lines_count)
 {
   char str[3000];
-  char buff[200];//buffer pt transformarea val din intregi in sir de caractere
+  char buff[500];//buffer pt transformarea val din intregi in sir de caractere
+
   struct stat st_file;
   if(stat(path,&st_file) == -1)
     {
@@ -45,11 +46,12 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
   strcat(str,name);
   strcat(str,"\n");
 
-  //adaugare lungime si inaltime pentru fisierele bmp
+  //adaugare lungime, inaltime pentru fisierele bmp+ schimbare poza in alb-negru
   if(S_ISREG(st_file.st_mode)&& strstr(path,".bmp"))
     {
       int fd;
-      fd=open(path,O_RDONLY);
+ 
+      fd=open(path,O_RDWR);
       if(fd==-1)
 	{
 	  perror("error.open");
@@ -75,7 +77,6 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 	  }
 	  exit(1);
 	}
-      
       strcat(str,"inaltime: ");
       sprintf(buff,"%d\n",inaltime);
       strcat(str,buff);
@@ -84,9 +85,69 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
       strcat(str,buff);
 
       *lines_count=10;
-
       
-    }
+      //transformarea in alb negru a imaginii
+      pid_t childPid = fork();
+
+      if (childPid == -1) {
+        perror("error child process creation ");
+        close(fd);
+        return;
+      }
+      if (childPid == 0)
+	{
+	  int pixels=lungime*inaltime;
+	  unsigned char bmpHeader[54];
+	  if (read(fd,bmpHeader,sizeof(bmpHeader))!= sizeof(bmpHeader))
+	    {
+	      perror("error reading bmp header");
+	      exit(1);
+	    }
+	  for(int i=0;i<pixels;i++)
+	    {
+	      unsigned char p[3];
+	      if(read(fd,p,sizeof(p))!=sizeof(p))
+		{
+		  perror("error reading pixels");
+		  exit(1);
+		}
+	      unsigned char gray;
+	      gray=0.299*p[0]+0.587*p[1]+0.114*p[2];
+	      
+	      lseek(fd,-3,SEEK_CUR);
+	      
+	      write(fd,&gray,sizeof(gray));
+	      write(fd,&gray,sizeof(gray));
+	      write(fd,&gray,sizeof(gray));
+	    }
+	  
+	  if(close(fd)==-1)
+	    {
+	      perror("error closing file");
+	      exit(1);
+	    }
+	  exit(0);
+	}
+      else {
+        int status;
+        waitpid(childPid, &status, 0);
+
+        if (WIFEXITED(status)) {
+	  printf("S-a încheiat procesul cu pid-ul %d și codul %d\n", childPid, WEXITSTATUS(status));
+        } else {
+	  printf("process with pid %d didnt't ended correctly\n", childPid);
+        }
+      }
+   
+   
+      if(close(fd)==-1)
+	{
+	  perror("error closing file");
+	  exit(1);
+	}
+    }    
+	
+      
   
   //dimensiunea pentru legatura simbolica
   if(S_ISLNK(st_link.st_mode))
@@ -148,13 +209,15 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
   strcat(str,buff);
   strcat(str,"\n");
 
+
   
- 
+  //screrea in fisierul de iesire pt fiecare tip
   if(write(out_fd,str,strlen(str))==-1)
     {
       perror("error write file");
       exit(1);
     }
+
   
 }
 
