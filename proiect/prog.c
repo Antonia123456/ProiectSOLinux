@@ -9,6 +9,11 @@
 #include<sys/wait.h>
 #include<sys/types.h>
 
+
+//pid_t childPids[100];
+//int childCount = 0;
+
+
 void cerinte(char *path,char* name,int out_fd,int *lines_count)
 {
   char str[3000];
@@ -128,16 +133,20 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 	    }
 	  exit(0);
 	}
-      else {
-        int status;
-        waitpid(childPid, &status, 0);
+      else
+	{
+          int status;
+	  waitpid(childPid, &status, 0);
 
-        if (WIFEXITED(status)) {
-	  printf("S-a încheiat procesul cu pid-ul %d și codul %d\n", childPid, WEXITSTATUS(status));
-        } else {
-	  printf("process with pid %d didnt't ended correctly\n", childPid);
-        }
-      }
+	  if (WIFEXITED(status))
+	    {
+	      printf("S-a încheiat procesul cu pid-ul %d și codul %d\n", childPid, WEXITSTATUS(status));
+	    }
+	  else 
+	    printf("process with pid %d didnt't ended correctly\n", childPid);
+	 
+        
+	}
    
    
       if(close(fd)==-1)
@@ -211,12 +220,14 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 
 
   
-  //screrea in fisierul de iesire pt fiecare tip
+  //scrierea in fisierul de iesire pt fiecare tip
   if(write(out_fd,str,strlen(str))==-1)
     {
       perror("error write file");
       exit(1);
     }
+
+  
 
   
 }
@@ -258,7 +269,9 @@ void citire_director(const char *director,const char *iesire)
   sprintf(statistici,"%s/statistica.txt",director);
   
   int st_fd=open(statistici,O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-  
+
+
+ 
   while((entry=readdir(dir))!=NULL)
     {
       if(strcmp(entry->d_name,".")!=0 && strcmp(entry->d_name,"..")!=0)
@@ -297,31 +310,43 @@ void citire_director(const char *director,const char *iesire)
 		}
 	      exit(count);
 	    }
-	  else
-	    {
-	      int status=0;
-	      waitpid(childPid, &status,0);
-	      if(WIFEXITED(status))
-		printf("S-a incheiat procesul cu pid-ul %d si codul %d\n",childPid,WEXITSTATUS(status));
-	      else
-		printf("process with pid %d didnt't ended correctly\n",childPid);
-	  
-	      writeStatistic(st_fd,childPid,WEXITSTATUS(status));
-	    }
+	  //else
+	  //{
+	  // childPids[childCount++] = childPid;
+	  //   }
 	    
 	}
     }
-	
-      if(close(st_fd)==-1)
+
+
+  //rularea in paralel a proceselor
+  //for (int i = 0; i < childCount; ++i)
+  int status,pid;
+  while((pid=wait(&status))!=-1)
+    {
+      //int status = 0;
+      //waitpid(childPids[i], &status, 0);
+      if (WIFEXITED(status))
 	{
-	  perror("error close statistic");
-	  exit(1);
+	  printf("S-a incheiat procesul cu pid-ul %d si codul %d\n",pid, WEXITSTATUS(status));
+	  
+	  writeStatistic(st_fd, pid, WEXITSTATUS(status));
 	}
-      if(closedir(dir)==-1)
-	{
-	  perror("error close dir");
-	  exit(1);
-	}
+      else 
+        printf("Process with pid %d didn't end correctly\n",pid);
+      
+    }
+  
+  if(close(st_fd)==-1)
+    {
+      perror("error close statistic");
+      exit(1);
+    }
+  if(closedir(dir)==-1)
+    {
+      perror("error close dir");
+      exit(1);
+    }
 	
     
 }
@@ -334,7 +359,7 @@ int main(int argc,char*argv[])
       exit(1);
     }
   citire_director(argv[1],argv[2]);
+
+  
   return 0;
 }
-//fol structura stat pt fiecare fis, verif cu st_mode daca e regulat,legat simbolica sau director si afisam atr pt fiecare fis, trebuie ignorate cele doua .. si . cu un strcmp prob
-//stat trb sa primeasca intreaga cale carte fisier cu sprintf director/numefisier
