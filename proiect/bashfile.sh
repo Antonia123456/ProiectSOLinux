@@ -5,7 +5,7 @@ char="$1"
 count=0 
 
 if [ "$#" -ne 1 ]; then
-    echo "Nr incorect arg"  
+    echo "incorect number of arguments"  
     exit 1
 fi
 

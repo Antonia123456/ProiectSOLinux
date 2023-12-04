@@ -1,6 +1,0 @@
-Procesul fiu 2216 are 5 linii
-Procesul fiu 2214 are 8 linii
-Procesul fiu 2212 are 8 linii
-Procesul fiu 2211 are 6 linii
-Procesul fiu 2215 are 8 linii
-Procesul fiu 2213 are 10 linii

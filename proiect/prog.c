@@ -10,11 +10,7 @@
 #include<sys/types.h>
 
 
-//pid_t childPids[100];
-//int childCount = 0;
-
-
-void cerinte(char *path,char* name,int out_fd,int *lines_count)
+void cerinte(char *path,char* name,int out_fd,int *lines_count,int pfd[2])
 {
   char str[3000];
   char buff[500];//buffer pt transformarea val din intregi in sir de caractere
@@ -34,16 +30,25 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
   //adaugare nume
   if(S_ISLNK(st_link.st_mode))
     {
+      close(pfd[0]);
+      close(pfd[1]);
       strcpy(str,"nume legatura: ");
       *lines_count=6;
     }
   else
     {
-      if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode) && strstr(path,".bmp")))
+      if(S_ISREG(st_file.st_mode)&& !(strstr(path,".bmp")))
 	strcpy(str,"nume fisier: ");
-  
+      if(S_ISREG(st_file.st_mode) && strstr(path,".bmp"))
+	{
+	  close(pfd[0]);
+	  close(pfd[1]);
+	  strcpy(str,"nume fisier: ");
+	}
       if(S_ISDIR(st_file.st_mode))
 	{
+	  close(pfd[0]);
+	  close(pfd[1]);
 	  strcpy(str,"nume director: ");
 	  *lines_count=5;
 	}
@@ -51,11 +56,11 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
   strcat(str,name);
   strcat(str,"\n");
 
-  //adaugare lungime, inaltime pentru fisierele bmp+ schimbare poza in alb-negru
+  //adaugare lungime, inaltime pentru fisierele bmp +schimbare poza in alb-negru
   if(S_ISREG(st_file.st_mode)&& strstr(path,".bmp"))
     {
       int fd;
- 
+
       fd=open(path,O_RDWR);
       if(fd==-1)
 	{
@@ -90,14 +95,14 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
       strcat(str,buff);
 
       *lines_count=10;
-      
+	
       //transformarea in alb negru a imaginii
       pid_t childPid = fork();
 
       if (childPid == -1) {
-        perror("error child process creation ");
-        close(fd);
-        return;
+	perror("error child process creation ");
+	close(fd);
+	return;
       }
       if (childPid == 0)
 	{
@@ -118,14 +123,14 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 		}
 	      unsigned char gray;
 	      gray=0.299*p[0]+0.587*p[1]+0.114*p[2];
-	      
+		
 	      lseek(fd,-3,SEEK_CUR);
-	      
+		
 	      write(fd,&gray,sizeof(gray));
 	      write(fd,&gray,sizeof(gray));
 	      write(fd,&gray,sizeof(gray));
 	    }
-	  
+	
 	  if(close(fd)==-1)
 	    {
 	      perror("error closing file");
@@ -135,7 +140,7 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 	}
       else
 	{
-          int status;
+	  int status;
 	  waitpid(childPid, &status, 0);
 
 	  if (WIFEXITED(status))
@@ -144,11 +149,11 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 	    }
 	  else 
 	    printf("process with pid %d didnt't ended correctly\n", childPid);
-	 
-        
+	
+		
 	}
-   
-   
+
+
       if(close(fd)==-1)
 	{
 	  perror("error closing file");
@@ -156,15 +161,15 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 	}
     }    
 	
-      
-  
+	
+
   //dimensiunea pentru legatura simbolica
   if(S_ISLNK(st_link.st_mode))
     {
       sprintf(buff,"dimensiune legatura: %ld\n",st_link.st_size);
       strcat(str,buff);
     }
-  
+
   //dimensiune fisier pt fisier regulat,bmp sau legatura simbolica 
   if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode)&& strstr(path,".bmp"))|| S_ISLNK(st_file.st_mode) )
     {
@@ -172,7 +177,7 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
       sprintf(buff,"%ld\n",st_file.st_size);
       strcat(str,buff);
     }
-  
+
   //ID utilizator pt fisier regulat,bmp sau director
   if(!(S_ISLNK(st_link.st_mode)))
     if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode)&& strstr(path,".bmp")) || S_ISDIR(st_file.st_mode))
@@ -181,7 +186,7 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 	sprintf(buff,"%d\n",st_file.st_uid);
 	strcat(str,buff);
       }
-  
+
   //timpul ultimei modificari pt fisier bmp sau regulat
   if(!(S_ISLNK(st_link.st_mode)))
     if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode)&& strstr(path,".bmp")))
@@ -189,7 +194,7 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 	strcat(str,"timpul ultimei modificari: ");
 	strcat(str,ctime(&st_file.st_mtime));
       }
-  
+
   //contorul de legaturi pt fisier bmp sau regulat
   if(!(S_ISLNK(st_link.st_mode)))//ca sa nu intre si pt legatura simbolica
     if(S_ISREG(st_file.st_mode) || (S_ISREG(st_file.st_mode)&& strstr(path,".bmp")))
@@ -198,12 +203,12 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
 	sprintf(buff,"%ld\n",st_file.st_nlink);
 	strcat(str,buff);
       }
-  
+
   //line counterul pt fisiere regulate dar nu bmp
   if(!(S_ISLNK(st_link.st_mode)))
     if(S_ISREG(st_file.st_mode) && !(S_ISREG(st_file.st_mode)&& strstr(path,".bmp")))
       *lines_count=8;
-      
+	
   //drepturi de acces user
   //drepturi de acces grup
   //drepturi de acces altii
@@ -219,7 +224,7 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
   strcat(str,"\n");
 
 
-  
+
   //scrierea in fisierul de iesire pt fiecare tip
   if(write(out_fd,str,strlen(str))==-1)
     {
@@ -227,14 +232,34 @@ void cerinte(char *path,char* name,int out_fd,int *lines_count)
       exit(1);
     }
 
-  
+  //citirea din fisier a liniilor si scrierea informatiei in pipe
+  if(!(S_ISLNK(st_link.st_mode)))
+    if(S_ISREG(st_file.st_mode) && !(S_ISREG(st_file.st_mode)&& strstr(path,".bmp")))
+      {
+	close(pfd[0]);
+	int n;
+	char buffer[500];
+	int fd;
+	fd=open(path,O_RDWR);
+	if(fd==-1)
+	  {
+	    perror("error.open");
+	    exit(1);
+	  }
+	while((n=read(fd,buffer,sizeof(buffer)))>0)
+	  {
+	    write(pfd[1],buffer,n);
+		
+	  }
+	close(pfd[1]);
+      }
 
-  
+
 }
 
 void writeStatistic(int st_fd,int childPid,int lines)
 {
-  char buff[200];
+  char buff[500];
   sprintf(buff,"Procesul fiu %d are %d linii\n",childPid,lines);
   if(write(st_fd,buff,strlen(buff))==-1)
     {
@@ -244,11 +269,11 @@ void writeStatistic(int st_fd,int childPid,int lines)
 }
 
 
-void citire_director(const char *director,const char *iesire)
+void citire_director(const char *director,const char *iesire,const char* caracter)
 {
   DIR *dir;
   struct dirent *entry=NULL;
-  
+
   dir=opendir(director);
   if(dir==NULL)
     {
@@ -258,25 +283,32 @@ void citire_director(const char *director,const char *iesire)
 
   struct stat file;
   if(stat(iesire,&file)==-1)
-      if(!S_ISDIR(file.st_mode))
-	{
-	  perror("error stat output director");
-	  exit(1);
-	}
-  
-    
+    if(!S_ISDIR(file.st_mode))
+      {
+	perror("error stat output director");
+	exit(1);
+      }
+
+	
   char statistici[300];
   sprintf(statistici,"%s/statistica.txt",director);
-  
+
   int st_fd=open(statistici,O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
 
- 
+  int suma=0;
+  int pfd[2];
+  
+  if(pipe(pfd)<0)
+    {
+      perror("Eroare la crearea pipe-ului\n");
+      exit(1);
+    }
   while((entry=readdir(dir))!=NULL)
     {
       if(strcmp(entry->d_name,".")!=0 && strcmp(entry->d_name,"..")!=0)
 	{
-	  
+		
 	  char path[300];
 	  sprintf(path,"%s/%s",director,entry->d_name);
 
@@ -298,11 +330,13 @@ void citire_director(const char *director,const char *iesire)
 		  perror("error open output file");
 		  exit(1);
 		}
-	  
-	      //apelam cerintele pt fiecare fisier/dir/legatura simbolica
-	      cerinte(path,entry->d_name,out_fd, &count);
-	    
 
+						
+						
+	      //apelam cerintele pt fiecare fisier/dir/legatura simbolica
+	      cerinte(path,entry->d_name,out_fd, &count,pfd);
+						
+										
 	      if(close(out_fd)==-1)
 		{
 		  perror("error close output file");
@@ -310,33 +344,84 @@ void citire_director(const char *director,const char *iesire)
 		}
 	      exit(count);
 	    }
-	  //else
-	  //{
-	  // childPids[childCount++] = childPid;
-	  //   }
-	    
-	}
+	  
+	  //cerinta sapt 9
+	  struct stat st_file;
+	  if(stat(path,&st_file) == -1)
+	    {
+	      perror("stat file error");
+	      exit(1);
+	    }
+	  struct stat st_link;
+	  if(lstat(path,&st_link) == -1)
+	    {
+	      perror("stat link error");
+	      exit(1);
+	    }
+	  
+	  //in cazul procesului parinte, daca fisierul e normal,nu bmp, aplicam bash-ul pe datele citite din pipe si calculam suma liniilor corecte
+	  if(!(S_ISLNK(st_link.st_mode)))
+	    if(S_ISREG(st_file.st_mode) && !strstr(path,".bmp"))
+	      {
+		int pfd2[2];
+		if(pipe(pfd2)<0)
+		  {
+		    printf("Eroare la crearea pipe-ului\n");
+		    exit(1);
+		  }
+		pid_t childPid=fork();
+		if(childPid ==-1)
+		  {
+		    perror("error child process creation");
+		    exit(1);
+		  }
+
+		if(childPid ==0)
+		  {
+		    close(pfd2[0]);
+		    close(pfd[1]);
+		    dup2(pfd[0],0);
+		    close(pfd[0]);
+		    dup2(pfd2[1],1);
+		    close(pfd2[1]);
+		    execlp("bash","bash","bashfile.sh",caracter,NULL);
+
+		    perror("execlp error\n");
+		    exit(1);
+		  }
+		close(pfd2[1]);
+		close(pfd[1]);
+		close(pfd[0]);
+		int nr;
+		FILE *stream;
+		stream=fdopen(pfd2[0],"r");
+		// deschide un stream (FILE *) pentru capatul de citire 
+		while((fscanf(stream,"%d",&nr))!=EOF)
+		  suma=suma+nr;
+	      }
+						
+								
+	}	
     }
 
-
+  printf("Au fost identificate in total %d propozitii corecte care contin caracterul %s\n",suma,caracter);
+  
   //rularea in paralel a proceselor
-  //for (int i = 0; i < childCount; ++i)
-  int status,pid;
-  while((pid=wait(&status))!=-1)
+  int status,paralelpid;
+  while((paralelpid=wait(&status))!=-1)
     {
-      //int status = 0;
-      //waitpid(childPids[i], &status, 0);
+	
       if (WIFEXITED(status))
 	{
-	  printf("S-a incheiat procesul cu pid-ul %d si codul %d\n",pid, WEXITSTATUS(status));
-	  
-	  writeStatistic(st_fd, pid, WEXITSTATUS(status));
+	  printf("S-a incheiat procesul cu pid-ul %d si codul %d\n",paralelpid, WEXITSTATUS(status));
+	
+	  writeStatistic(st_fd, paralelpid, WEXITSTATUS(status));
 	}
       else 
-        printf("Process with pid %d didn't end correctly\n",pid);
-      
+	printf("Process with pid %d didn't end correctly\n",paralelpid);
+	
     }
-  
+
   if(close(st_fd)==-1)
     {
       perror("error close statistic");
@@ -348,18 +433,19 @@ void citire_director(const char *director,const char *iesire)
       exit(1);
     }
 	
-    
+	
 }
 
 int main(int argc,char*argv[])
 {
-  if(argc!=3)
+  if(argc!=4)
     {
       perror("incorect number of args");
       exit(1);
     }
-  citire_director(argv[1],argv[2]);
-
   
+  citire_director(argv[1],argv[2],argv[3]);
+
+
   return 0;
 }
