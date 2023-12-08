@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 char="$1"
 count=0 
 
@@ -29,3 +28,4 @@ while IFS= read -r linie || [ -n "$linie" ]; do
 done
 
 echo $count 
+
